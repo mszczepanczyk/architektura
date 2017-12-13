@@ -19,7 +19,7 @@ const uint32_t indexes[24] = {
   0x00100000, 0x00200000, 0x00400000, 0x00800000,
 };
 
-int people_fucking_dying(uint32_t grid) {
+int people_fucking_dying(int min_fields_no, uint32_t grid) {
   if (!grid) {
     return 0;
   }
@@ -41,7 +41,7 @@ int people_fucking_dying(uint32_t grid) {
         }
         next >>= 1;
       }
-      if (++count >= 5) {
+      if (++count >= min_fields_no) {
         return 1;
       }
     }
@@ -54,18 +54,25 @@ PCF8574 buttons[3];
 PCF8574 leds[3];
 int panic_mode;
 int panic_mode_step;
-const int panic_mode_tick = 1000;
+const int panic_mode_tick = 200;
 const int tick = 100;
 
 void setup()
 {
+  Serial.begin(9600);
   // TODO adresy do ustawienia
-  buttons[0].begin(0x00);
-  buttons[1].begin(0x00);
-  buttons[2].begin(0x00);
-  leds[0].begin(0x00);
-  leds[1].begin(0x00);
-  leds[2].begin(0x00);
+  buttons[0].begin(0x38);
+//  buttons[1].begin(0x00);
+//  buttons[2].begin(0x00);
+  leds[0].begin(0x39);
+//  leds[1].begin(0x00);
+//  leds[2].begin(0x00);
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 8; j++) {
+      leds[i].pinMode(j, OUTPUT);
+      buttons[i].pinMode(j, INPUT);
+    }
+  }
 }
 
 void loop()
@@ -74,9 +81,11 @@ void loop()
   uint32_t grid = 0;
   for (int i = 2; i >= 0; i--) {
     values[i] = buttons[i].read();
+//    values[i] &= 0x03;
+//    Serial.println(values[i], BIN);
     grid = (grid << 8) | values[i];
   }
-  if (people_fucking_dying(grid)) {
+  if (people_fucking_dying(5, grid)) {
     if (!panic_mode) {
       panic_mode = 1;
       panic_mode_step = 0;
